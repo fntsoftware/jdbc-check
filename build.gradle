@@ -8,6 +8,7 @@ plugins {
     id "java"
     id "eclipse"
     id 'maven-publish'
+	id 'com.diffplug.spotless' version '6.25.0'
 }
 
 repositories {
@@ -91,3 +92,22 @@ task testJar(dependsOn: [
 ]) { description 'triggers the tests' }
 
 publish.dependsOn testJar
+
+/* SPOTLESS CODE FORMATTER */
+spotless {
+	java {
+		googleJavaFormat()
+	}
+
+	yaml {
+		target '*.yaml'
+		target '*.yml'
+		jackson()
+		prettier()
+	}
+
+	groovyGradle {
+		target '*.gradle'
+		greclipse()
+	}
+}
