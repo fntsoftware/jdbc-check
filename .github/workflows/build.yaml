@@ -1,0 +1,57 @@
+name: Build
+
+on:
+  push: 
+    # trigger after PR merge
+    branches: ["main"]
+    # trigger on tag push
+    tags: ["[0-9]+.[0-9]+.[0-9]+"]
+  # trigger for PRs
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: ["main"]
+  # manual trigger
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16.1
+        ports:
+          - 22222:5432 
+        env:
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: testdb 
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set version
+        if: ${{ github.ref_type == 'tag' }}
+        run: echo "VERSION=${{ github.ref_name }}" >> $GITHUB_ENV
+
+      - name: Build
+        run: ./gradlew build -Pversion=${{ github.ref_name }}
+
+      - name: Test
+        run: ./gradlew testJar -Pversion=${{ github.ref_name }}
+
+      - name: Create GitHub release
+        if: ${{ github.ref_type == 'tag' }}
+        uses: softprops/action-gh-release@v1
+        with:
+          name: "JDBC Check ${{ github.ref_name }}"
+          fail_on_unmatched_files: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+          files: |
+            ./build/libs/*.jar
