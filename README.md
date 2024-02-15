@@ -43,3 +43,12 @@ docker run -d --name test_db -p 22222:5432 -e POSTGRES_USER=user -e POSTGRES_PAS
 # run the tests
 ./gradlew testJar
 ```
+
+## Code formatting
+``` bash
+# check code format
+./gradlew spotlessCheck
+
+# format code
+./gradlew spotlessApply
+```

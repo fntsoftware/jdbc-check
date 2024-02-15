@@ -1,93 +1,113 @@
 buildscript {
-    repositories {
-        mavenCentral()
-    }
+	repositories {
+		mavenCentral()
+	}
 }
 
 plugins {
-    id "java"
-    id "eclipse"
-    id 'maven-publish'
+	id "java"
+	id "eclipse"
+	id 'maven-publish'
+	id 'com.diffplug.spotless' version '6.25.0'
 }
 
 repositories {
-    mavenCentral()
+	mavenCentral()
 }
 
 version = "SNAPSHOT-LOCAL"
 if(System.env.CI && System.env.VERSION != null) {
-    version = System.env.VERSION
+	version = System.env.VERSION
 }
 
 group 'com.fntsoftware.itservices'
 java {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
+	sourceCompatibility = JavaVersion.VERSION_11
+	targetCompatibility = JavaVersion.VERSION_11
 }
 
 
 dependencies{
-    implementation 'com.oracle.database.jdbc:ojdbc8:19.14.0.0'
-    implementation 'org.postgresql:postgresql:42.7.1'
-    implementation 'commons-cli:commons-cli:1.4'
+	implementation 'com.oracle.database.jdbc:ojdbc8:19.14.0.0'
+	implementation 'org.postgresql:postgresql:42.7.1'
+	implementation 'commons-cli:commons-cli:1.4'
 }
 
 
 task fatJar(type: Jar){
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    manifest {
-        attributes 'Implementation-Title': 'SQL Script Executor', 'Implementation-Version': version
-        attributes 'Main-Class': 'com.fntsoftware.itservices.jdbcTest.JdbcTest'
-        attributes 'Class-Path': '.'
-    }
-    baseName = project.name + '-all'
-    from {
-        configurations.runtimeClasspath.collect {
-            println it
-            it.isDirectory() ? it : zipTree(it)
-        }
-    }
-    with jar
+	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+	manifest {
+		attributes 'Implementation-Title': 'SQL Script Executor', 'Implementation-Version': version
+		attributes 'Main-Class': 'com.fntsoftware.itservices.jdbcTest.JdbcTest'
+		attributes 'Class-Path': '.'
+	}
+	baseName = project.name + '-all'
+	from {
+		configurations.runtimeClasspath.collect {
+			println it
+			it.isDirectory() ? it : zipTree(it)
+		}
+	}
+	with jar
 }
 
 jar{
-    manifest {
-        attributes 'Implementation-Title': 'SQL Script Executor',
-        'Implementation-Version': version,
-        'Implementation-Vendor-Id': 'de.fnt',
-        'Main-Class': 'com.fntsoftware.itservices.jdbcTest.JdbcTest'
-    }
+	manifest {
+		attributes 'Implementation-Title': 'SQL Script Executor',
+		'Implementation-Version': version,
+		'Implementation-Vendor-Id': 'de.fnt',
+		'Main-Class': 'com.fntsoftware.itservices.jdbcTest.JdbcTest'
+	}
 }
 
 task sourceJar(type: Jar) { from sourceSets.main.allJava }
 
 publishing{
-    publications	{
-        mavenJava(MavenPublication)		{
-            from components.java
-            artifact sourceJar{ classifier "sources" }
-        }
-        mavenJava(MavenPublication)		{
-            artifact fatJar{ classifier "fat" }
-        }
-    }
+	publications	{
+		mavenJava(MavenPublication)		{
+			from components.java
+			artifact sourceJar{ classifier "sources" }
+		}
+		mavenJava(MavenPublication)		{
+			artifact fatJar{ classifier "fat" }
+		}
+	}
 }
 
 task testJarWithParams(type: JavaExec) {
-    classpath = fatJar.outputs.files
-    main = 'com.fntsoftware.itservices.jdbcTest.JdbcTest'
-    args '-dbType', 'postgres', '-hostName', 'localhost','-port', '22222', '-dbName', 'testdb', '-dbUsername', 'user', '-dbPassword', 'password', '-timeout', '40', '-query', 'select 1'
+	classpath = fatJar.outputs.files
+	main = 'com.fntsoftware.itservices.jdbcTest.JdbcTest'
+	args '-dbType', 'postgres', '-hostName', 'localhost','-port', '22222', '-dbName', 'testdb', '-dbUsername', 'user', '-dbPassword', 'password', '-timeout', '40', '-query', 'select 1'
 }
 
 task testJarWithJDBCURL(type: JavaExec) {
-    classpath = fatJar.outputs.files
-    main = 'com.fntsoftware.itservices.jdbcTest.JdbcTest'
-    args '-dbType','postgres','-jdbcURL' ,'jdbc:postgresql://localhost:22222/testdb','-dbUsername', 'user','-dbPassword' ,'password', '-timeout', '40', '-query', 'select 1'
+	classpath = fatJar.outputs.files
+	main = 'com.fntsoftware.itservices.jdbcTest.JdbcTest'
+	args '-dbType','postgres','-jdbcURL' ,'jdbc:postgresql://localhost:22222/testdb','-dbUsername', 'user','-dbPassword' ,'password', '-timeout', '40', '-query', 'select 1'
 }
 
 task testJar(dependsOn: [
-    testJarWithParams,
-    testJarWithJDBCURL
+	testJarWithParams,
+	testJarWithJDBCURL
 ]) { description 'triggers the tests' }
 
 publish.dependsOn testJar
+
+/* SPOTLESS CODE FORMATTER */
+spotless {
+	java {
+		googleJavaFormat()
+	}
+
+	yaml {
+		target '*.yaml'
+		target '*.yml'
+		jackson()
+		prettier()
+	}
+
+	groovyGradle {
+		target '*.gradle'
+		greclipse()
+	}
+}
