@@ -1,6 +1,10 @@
 buildscript {
 	repositories {
-		mavenCentral()
+		if (System.getenv("GITHUB_ACTIONS") != "true" || System.getenv("FNT_RUNNER") == "true") {
+			maven { url = uri("${artifactoryUrl}") }
+		} else {
+			mavenCentral()
+		}
 	}
 }
 
@@ -12,7 +16,11 @@ plugins {
 }
 
 repositories {
-	mavenCentral()
+	if (System.getenv("GITHUB_ACTIONS") != "true" || System.getenv("FNT_RUNNER") == "true") {
+		maven { url = uri("${artifactoryUrl}") }
+	} else {
+		mavenCentral()
+	}
 }
 
 version = "SNAPSHOT-LOCAL"
@@ -20,7 +28,7 @@ if(System.env.CI && System.env.VERSION != null) {
 	version = System.env.VERSION
 }
 
-group 'com.fntsoftware.itservices'
+group = 'com.fntsoftware.itservices'
 java {
 	sourceCompatibility = JavaVersion.VERSION_11
 	targetCompatibility = JavaVersion.VERSION_11
@@ -41,7 +49,8 @@ task fatJar(type: Jar){
 		attributes 'Main-Class': 'com.fntsoftware.itservices.jdbcTest.JdbcTest'
 		attributes 'Class-Path': '.'
 	}
-	baseName = project.name + '-all'
+	archiveBaseName.set(project.name + '-all')
+	archiveClassifier.set('fat')
 	from {
 		configurations.runtimeClasspath.collect {
 			println it
@@ -60,43 +69,46 @@ jar{
 	}
 }
 
-task sourceJar(type: Jar) { from sourceSets.main.allJava }
+task sourceJar(type: Jar) {
+	from sourceSets.main.allJava
+	archiveClassifier.set('sources')
+}
 
 publishing{
 	publications	{
 		mavenJava(MavenPublication)		{
 			from components.java
-			artifact sourceJar{ classifier "sources" }
+			artifact sourceJar
 		}
 		mavenJava(MavenPublication)		{
-			artifact fatJar{ classifier "fat" }
+			artifact fatJar
 		}
 	}
 }
 
 task testJarWithParams(type: JavaExec) {
 	classpath = fatJar.outputs.files
-	main = 'com.fntsoftware.itservices.jdbcTest.JdbcTest'
+	mainClass.set('com.fntsoftware.itservices.jdbcTest.JdbcTest')
 	args '-dbType', 'postgres', '-hostName', 'localhost','-port', '22222', '-dbName', 'testdb', '-dbUsername', 'user', '-dbPassword', 'password', '-timeout', '40', '-query', 'select 1'
 }
 
 task testJarWithJDBCURL(type: JavaExec) {
 	classpath = fatJar.outputs.files
-	main = 'com.fntsoftware.itservices.jdbcTest.JdbcTest'
+	mainClass.set('com.fntsoftware.itservices.jdbcTest.JdbcTest')
 	args '-dbType','postgres','-jdbcURL' ,'jdbc:postgresql://localhost:22222/testdb','-dbUsername', 'user','-dbPassword' ,'password', '-timeout', '40', '-query', 'select 1'
 }
 
 task testJar(dependsOn: [
 	testJarWithParams,
 	testJarWithJDBCURL
-]) { description 'triggers the tests' }
+]) { description = 'triggers the tests' }
 
 publish.dependsOn testJar
 
 /* SPOTLESS CODE FORMATTER */
 spotless {
 	java {
-		googleJavaFormat()
+		googleJavaFormat('1.30.0')
 	}
 
 	yaml {

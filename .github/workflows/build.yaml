@@ -1,7 +1,7 @@
 name: Build
 
 on:
-  push: 
+  push:
     # trigger after PR merge
     branches: ["main"]
     # trigger on tag push
@@ -16,6 +16,10 @@ on:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}
   cancel-in-progress: true
+env:
+  GIT_CHECKOUT_REF: "${{ github.event_name != 'pull_request' && github.ref || github.event.pull_request.head.sha }}"
+  JAVA_VERSION: 25
+  GENERATE_GRADLE_JOB_SUMMARY: never
 
 jobs:
   build:
@@ -26,15 +30,31 @@ jobs:
       postgres:
         image: postgres:16.1
         ports:
-          - 22222:5432 
+          - 22222:5432
         env:
           POSTGRES_USER: user
           POSTGRES_PASSWORD: password
-          POSTGRES_DB: testdb 
+          POSTGRES_DB: testdb
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.GIT_CHECKOUT_REF }}
+          persist-credentials: false
+
+      - name: Setup java
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Setup gradle
+        uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0 # zizmor: ignore[cache-poisoning]
+        with:
+          add-job-summary: ${{ env.GENERATE_GRADLE_JOB_SUMMARY }}
+          cache-disabled: false
+          cache-read-only: ${{ github.event_name == 'pull_request' }}
 
       - name: Set version
         if: ${{ github.ref_type == 'tag' }}
@@ -51,7 +71,7 @@ jobs:
 
       - name: Create GitHub release
         if: ${{ github.ref_type == 'tag' }}
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3 # zizmor: ignore[superfluous-actions]
         with:
           name: "JDBC Check ${{ github.ref_name }}"
           fail_on_unmatched_files: true
