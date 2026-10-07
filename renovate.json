@@ -1,0 +1,58 @@
+{
+    "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+    "extends": [
+        "config:recommended"
+    ],
+    "labels": [
+        "dependency-update",
+        "renovate"
+    ],
+    "dependencyDashboard": true,
+    "rebaseWhen": "conflicted",
+    "rebaseLabel": "renovate-rebase",
+    "keepUpdatedLabel": "renovate-keep-updated",
+    "stopUpdatingLabel": "renovate-stop-updating",
+    "commitMessagePrefix": "chore(deps): ",
+    "enabledManagers": [
+        "github-actions",
+        "gradle",
+        "custom.regex"
+    ],
+    "customManagers": [
+        {
+            "description": "Track pinned npm packages in GitHub Actions workflow run steps",
+            "customType": "regex",
+            "fileMatch": [
+                "^\\.github/workflows/.*\\.yml$"
+            ],
+            "matchStrings": [
+                "npm install[^\\n]*?(?<depName>@[\\w-]+/[\\w.-]+|[\\w-]+)@(?<currentValue>[\\d]+\\.[\\d]+\\.[\\d]+)"
+            ],
+            "datasourceTemplate": "npm"
+        }
+    ],
+    "packageRules": [
+        {
+            "description": "Use semver for GitHub Actions",
+            "matchManagers": [
+                "github-actions"
+            ],
+            "versioning": "semver"
+        },
+        {
+            "description": "Automerge non-major GitHub Actions updates",
+            "matchManagers": [
+                "github-actions"
+            ],
+            "matchUpdateTypes": [
+                "minor",
+                "patch",
+                "digest",
+                "pin"
+            ],
+            "automerge": true,
+            "automergeType": "pr",
+            "platformAutomerge": true
+        }
+    ]
+}

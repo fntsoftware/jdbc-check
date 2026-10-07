@@ -1,0 +1,45 @@
+name: Validate Renovate Config
+
+on:
+  pull_request:
+    paths:
+      - "renovate.json*"
+      - ".github/renovate.json*"
+  # manual trigger
+  workflow_dispatch:
+    inputs:
+      note:
+        description: "Manual trigger to validate actual renovate config file"
+        type: boolean
+        default: true
+env:
+  NODE_VERSION: 20
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Renovate Config Validation
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: ${{env.NODE_VERSION}}
+
+      - name: Install Renovate CLI
+        run: npm install -g renovate@43.288.0 # zizmor: ignore[adhoc-packages]
+
+      - name: Validate Renovate Config json
+        run: renovate-config-validator
