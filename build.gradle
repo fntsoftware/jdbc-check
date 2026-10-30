@@ -37,7 +37,7 @@ java {
 
 dependencies{
 	implementation 'com.oracle.database.jdbc:ojdbc8:19.14.0.0'
-	implementation 'org.postgresql:postgresql:42.7.1'
+	implementation 'org.postgresql:postgresql:42.7.14'
 	implementation 'commons-cli:commons-cli:1.4'
 }
 
