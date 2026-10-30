@@ -50,7 +50,7 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
 
       - name: Setup gradle
-        uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0 # zizmor: ignore[cache-poisoning]
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1 # zizmor: ignore[cache-poisoning]
         with:
           add-job-summary: ${{ env.GENERATE_GRADLE_JOB_SUMMARY }}
           cache-disabled: false
