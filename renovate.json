@@ -22,8 +22,8 @@
         {
             "description": "Track pinned npm packages in GitHub Actions workflow run steps",
             "customType": "regex",
-            "fileMatch": [
-                "^\\.github/workflows/.*\\.yml$"
+            "managerFilePatterns": [
+                "/^\\.github/workflows/.*\\.yml$/"
             ],
             "matchStrings": [
                 "npm install[^\\n]*?(?<depName>@[\\w-]+/[\\w.-]+|[\\w-]+)@(?<currentValue>[\\d]+\\.[\\d]+\\.[\\d]+)"
