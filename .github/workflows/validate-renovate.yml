@@ -39,7 +39,7 @@ jobs:
           node-version: ${{env.NODE_VERSION}}
 
       - name: Install Renovate CLI
-        run: npm install -g renovate@44.199.2 # zizmor: ignore[adhoc-packages]
+        run: npm install -g renovate@44.239.1 # zizmor: ignore[adhoc-packages]
 
       - name: Validate Renovate Config json
         run: renovate-config-validator
